@@ -18,6 +18,7 @@ package org.ludo.components
     import flash.utils.Timer;
     
     import mx.events.FlexEvent;
+    import mx.events.RSLEvent;
     import mx.preloaders.IPreloaderDisplay;
 
 	/**
@@ -86,7 +87,8 @@ package org.ludo.components
         
         private var loading:String = "Loading ";
         
-        public function CustomPreloader() {
+        public function CustomPreloader() 
+		{
             super();
         }
          
@@ -215,7 +217,8 @@ package org.ludo.components
             value.addEventListener(Event.COMPLETE, completeHandler);
             value.addEventListener(FlexEvent.INIT_PROGRESS, initProgressHandler);
             value.addEventListener(FlexEvent.INIT_COMPLETE, initCompleteHandler);
-        }
+			value.addEventListener(RSLEvent.RSL_PROGRESS, rslProgressHandler);
+		}
 
         virtual public function set backgroundAlpha(alpha:Number):void{}
         virtual public function get backgroundAlpha():Number { return 1; }
@@ -230,7 +233,7 @@ package org.ludo.components
         virtual public function set backgroundSize(size:String):void {}
         virtual public function get backgroundSize():String { return "auto"; }
         
-        protected var _stageHeight:Number = 300;
+        protected var _stageHeight:Number = 200;
         virtual public function set stageHeight(height:Number):void { _stageHeight = height; }
         virtual public function get stageHeight():Number { return _stageHeight; }
 
@@ -247,7 +250,6 @@ package org.ludo.components
             _bytesLoaded = event.bytesLoaded;
             _bytesExpected = event.bytesTotal;
             _fractionLoaded = Number(_bytesLoaded) / Number(_bytesExpected);
-            
             draw();
         }
         
@@ -255,11 +257,23 @@ package org.ludo.components
         // Note that there are two phases- download, and init
         virtual protected function completeHandler(event:Event):void 
 		{
+			loading = "Loading Complete ";
 		}
-    
-        
-        // Called from time to time as the initialization continues.        
-        virtual protected function initProgressHandler(event:Event):void {
+		private function getRSLName(url:String):String
+		{
+			return url.substring(url.lastIndexOf('/')+1,url.length)
+		}
+		virtual protected function rslProgressHandler(event:RSLEvent):void {
+			if (event.rslIndex && event.rslTotal) 
+			{
+				//create text to track the RSLs being loaded
+				loading = "Loading RSL " + getRSLName(event.url.url)+" ";
+			}
+		}
+		// Called from time to time as the initialization continues.        
+        virtual protected function initProgressHandler(event:Event):void 
+		{
+			loading = "Initializing ";
             draw();
         }
     
@@ -276,6 +290,7 @@ package org.ludo.components
 				_preloader.removeEventListener(Event.COMPLETE, completeHandler);
 				_preloader.removeEventListener(FlexEvent.INIT_PROGRESS, initProgressHandler);
 				_preloader.removeEventListener(FlexEvent.INIT_COMPLETE, initCompleteHandler); 
+				_preloader.removeEventListener(RSLEvent.RSL_PROGRESS, rslProgressHandler);
 				_timer.removeEventListener(TimerEvent.TIMER, timerHandler);
                 _timer.stop();
                 dispatchEvent(new Event(Event.COMPLETE));
